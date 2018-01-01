@@ -46,7 +46,6 @@ class Migrate extends AbstractCommand
         $this->setName('migrate')
             ->setDescription('Migrate the database')
             ->addOption('--target', '-t', InputOption::VALUE_REQUIRED, 'The version number to migrate to')
-            ->addOption('--date', '-d', InputOption::VALUE_REQUIRED, 'The date to migrate to')
             ->addOption('--dry-run', '-x', InputOption::VALUE_NONE, 'Dump query to standard output instead of executing it')
             ->setHelp(
                 <<<EOT
@@ -74,7 +73,6 @@ EOT
 
         $version = $input->getOption('target');
         $environment = $input->getOption('environment');
-        $date = $input->getOption('date');
 
         if ($environment === null) {
             $environment = $this->getConfig()->getDefaultEnvironment();
@@ -109,11 +107,7 @@ EOT
 
         // run the migrations
         $start = microtime(true);
-        if ($date !== null) {
-            $this->getManager()->migrateToDateTime($environment, new \DateTime($date));
-        } else {
-            $this->getManager()->migrate($environment, $version);
-        }
+        $this->getManager()->migrate($environment, $version);
         $end = microtime(true);
 
         $output->writeln('');

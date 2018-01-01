@@ -282,7 +282,7 @@ class Create extends AbstractCommand
             '$namespace' => $namespace,
             '$useClassName' => $this->getConfig()->getMigrationBaseClassName(false),
             '$className' => $className,
-            '$version' => Util::getVersionFromFileName($fileName),
+            '$version' => Util::getVersionFromFilePath($fileName),
             '$baseClassName' => $this->getConfig()->getMigrationBaseClassName(true),
         ];
         $contents = strtr($contents, $classes);

@@ -1180,42 +1180,6 @@ class ManagerTest extends TestCase
     }
 
     /**
-     * Test that migrating by date chooses the correct
-     * migration to point to.
-     *
-     * @dataProvider migrateDateDataProvider
-     *
-     * @param array  $availableMigrations
-     * @param string $dateString
-     * @param string $expectedMigration
-     * @param string $message
-     */
-    public function testMigrationsByDate(array $availableMigrations, $dateString, $expectedMigration, $message)
-    {
-        // stub environment
-        $envStub = $this->getMockBuilder('\Phinx\Migration\Manager\Environment')
-            ->setConstructorArgs(['mockenv', []])
-            ->getMock();
-        if (is_null($expectedMigration)) {
-            $envStub->expects($this->never())
-                    ->method('getVersions');
-        } else {
-            $envStub->expects($this->once())
-                    ->method('getVersions')
-                    ->will($this->returnValue($availableMigrations));
-        }
-        $this->manager->setEnvironments(['mockenv' => $envStub]);
-        $this->manager->migrateToDateTime('mockenv', new \DateTime($dateString));
-        rewind($this->manager->getOutput()->getStream());
-        $output = stream_get_contents($this->manager->getOutput()->getStream());
-        if (is_null($expectedMigration)) {
-            $this->assertEmpty($output, $message);
-        } else {
-            $this->assertContains($expectedMigration, $output, $message);
-        }
-    }
-
-    /**
      * Test that rollbacking to version chooses the correct
      * migration to point to.
      *

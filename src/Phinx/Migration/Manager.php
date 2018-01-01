@@ -270,30 +270,6 @@ class Manager
     }
 
     /**
-     * Migrate to the version of the database on a given date.
-     *
-     * @param string    $environment Environment
-     * @param \DateTime $dateTime    Date to migrate to
-     *
-     * @return void
-     */
-    public function migrateToDateTime($environment, \DateTime $dateTime)
-    {
-        $versions = array_keys($this->getMigrations());
-        $dateString = $dateTime->format('YmdHis');
-
-        $outstandingMigrations = array_filter($versions, function ($version) use ($dateString) {
-            return $version <= $dateString;
-        });
-
-        if (count($outstandingMigrations) > 0) {
-            $migration = max($outstandingMigrations);
-            $this->getOutput()->writeln('Migrating to version ' . $migration);
-            $this->migrate($environment, $migration);
-        }
-    }
-
-    /**
      * Migrate an environment to the specified version.
      *
      * @param string $environment Environment
@@ -312,7 +288,7 @@ class Manager
         }
 
         if ($version === null) {
-            $version = max(array_merge($versions, array_keys($migrations)));
+            $version = Util::maxVersion(array_merge($versions, array_keys($migrations)));
         } else {
             if (0 != $version && !isset($migrations[$version])) {
                 $this->output->writeln(sprintf(
@@ -329,9 +305,9 @@ class Manager
 
         if ($direction === MigrationInterface::DOWN) {
             // run downs first
-            krsort($migrations);
+            Util::rsortVersionMap($migrations);
             foreach ($migrations as $migration) {
-                if ($migration->getVersion() <= $version) {
+                if (Util::compareVersion($migration->getVersion(), $version) <= 0) {
                     break;
                 }
 
@@ -341,9 +317,9 @@ class Manager
             }
         }
 
-        ksort($migrations);
+        Util::sortVersionMap($migrations);
         foreach ($migrations as $migration) {
-            if ($migration->getVersion() > $version) {
+            if (Util::compareVersion($migration->getVersion(), $version) <= 0) {
                 break;
             }
 
@@ -673,8 +649,8 @@ class Manager
             $versions = [];
 
             foreach ($phpFiles as $filePath) {
-                if (Util::isValidMigrationFileName(basename($filePath))) {
-                    $version = Util::getVersionFromFileName(basename($filePath));
+                if (Util::isValidMigrationFilePath($filePath)) {
+                    $version = Util::getVersionFromFilePath($filePath);
 
                     if (isset($versions[$version])) {
                         throw new \InvalidArgumentException(sprintf('Duplicate migration - "%s" has the same version as "%s"', $filePath, $versions[$version]->getVersion()));
@@ -722,7 +698,8 @@ class Manager
                 }
             }
 
-            ksort($versions);
+            Util::sortVersionMap($versions);
+
             $this->setMigrations($versions);
         }
 
@@ -743,7 +720,7 @@ class Manager
         foreach ($paths as $path) {
             $files = array_merge(
                 $files,
-                Util::glob($path . DIRECTORY_SEPARATOR . '*.php')
+                Util::glob($path . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*.php')
             );
         }
         // glob() can return the same file multiple times

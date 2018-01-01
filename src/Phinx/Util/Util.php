@@ -38,6 +38,11 @@ class Util
     /**
      * @var string
      */
+    const DELTASET_NAME_PATTERN = '/^\d+(?:.\d){0,3}/';
+
+    /**
+     * @var string
+     */
     const MIGRATION_FILE_VERSION_PATTERN = '/^\d+(?:.\d)?/';
 
     /**
@@ -90,15 +95,15 @@ class Util
     /**
      * Get the version from the beginning of a file name.
      *
-     * @param string $fileName File Name
+     * @param string $filePath File Name
      * @return string
      */
-    public static function getVersionFromFileName($fileName)
+    public static function getVersionFromFilePath($filePath)
     {
         $matches = [];
-        preg_match(static::MIGRATION_FILE_VERSION_PATTERN, basename($fileName), $matches);
+        preg_match(static::MIGRATION_FILE_VERSION_PATTERN, basename($filePath), $matches);
 
-        return $matches[0];
+        return basename(dirname($filePath)).':'.$matches[0];
     }
 
     /**
@@ -176,14 +181,15 @@ class Util
     /**
      * Check if a migration file name is valid.
      *
-     * @param string $fileName File Name
+     * @param string $filePath File Name
      * @return bool
      */
-    public static function isValidMigrationFileName($fileName)
+    public static function isValidMigrationFilePath($filePath)
     {
         $matches = [];
 
-        return preg_match(static::MIGRATION_FILE_NAME_PATTERN, $fileName, $matches);
+        return preg_match(static::DELTASET_NAME_PATTERN, basename(dirname($filePath)), $matches)
+            && preg_match(static::MIGRATION_FILE_NAME_PATTERN, basename($filePath), $matches);
     }
 
     /**
@@ -243,5 +249,29 @@ class Util
         }
 
         return 0;
+    }
+
+    public static function sortVersionMap(array &$versionMap)
+    {
+        uksort($versionMap, function ($left, $right) {
+            return Util::compareVersion($left, $right);
+        });
+
+        return $versionMap;
+    }
+
+    public static function rsortVersionMap(array &$versionMap)
+    {
+        uksort($versionMap, function ($left, $right) {
+            return -1 * Util::compareVersion($left, $right);
+        });
+
+        return $versionMap;
+    }
+
+    public static function maxVersion(array $versions)
+    {
+        Util::sortVersionMap($versions);
+        return array_pop($versions);
     }
 }

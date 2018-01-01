@@ -248,9 +248,7 @@ abstract class PdoAdapter extends AbstractAdapter
         }
 
         if ($this->options['version_order'] === \Phinx\Config\Config::VERSION_ORDER_CREATION_TIME) {
-            uksort($result, function ($left, $right) {
-                return Util::compareVersion($left, $right);
-            });
+            Util::sortVersionMap($result);
         }
 
         return $result;
