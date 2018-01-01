@@ -103,10 +103,10 @@ class Manager
     public function printStatus($environment, $format = null)
     {
         $output = $this->getOutput();
-        $migrations = [];
         $hasDownMigration = false;
         $hasMissingMigration = false;
         $migrations = $this->getMigrations();
+
         if (count($migrations)) {
             // TODO - rewrite using Symfony Table Helper as we already have this library
             // included and it will fix formatting issues (e.g drawing the lines)
@@ -194,7 +194,7 @@ class Manager
                 $maxNameLength = max($maxNameLength, strlen($migration->getName()));
 
                 $output->writeln(sprintf(
-                    '%s %14.0f  %19s  %19s  <comment>%s</comment>',
+                    '%s %14s  %19s  %19s  <comment>%s</comment>',
                     $status,
                     $migration->getVersion(),
                     $version['start_time'],

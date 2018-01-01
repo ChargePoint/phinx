@@ -38,7 +38,12 @@ class Util
     /**
      * @var string
      */
-    const MIGRATION_FILE_NAME_PATTERN = '/^\d+_([\w_]+).php$/i';
+    const MIGRATION_FILE_VERSION_PATTERN = '/^\d+(?:.\d)?/';
+
+    /**
+     * @var string
+     */
+    const MIGRATION_FILE_NAME_PATTERN = '/^\d+(?:.\d)?_([\w-]+).php$/i';
 
     /**
      * @var string
@@ -91,7 +96,7 @@ class Util
     public static function getVersionFromFileName($fileName)
     {
         $matches = [];
-        preg_match('/^[0-9]+/', basename($fileName), $matches);
+        preg_match(static::MIGRATION_FILE_VERSION_PATTERN, basename($fileName), $matches);
 
         return $matches[0];
     }
@@ -220,5 +225,23 @@ class Util
     public static function glob($path)
     {
         return glob($path, defined('GLOB_BRACE') ? GLOB_BRACE : 0);
+    }
+
+    public static function compareVersion($left, $right)
+    {
+        $leftVersions = preg_split('/\./', $left);
+        $rightVersions = preg_split('/\./', $right);
+
+        for ($i = 0; $i < min(sizeof($leftVersions), sizeof($rightVersions)); ++$i) {
+            if ((int) $leftVersions[$i] < (int) $rightVersions[$i]) {
+                return -1;
+            }
+
+            if ((int) $leftVersions[$i] > (int) $rightVersions[$i]) {
+                return 1;
+            }
+        }
+
+        return 0;
     }
 }

@@ -29,6 +29,7 @@
 namespace Phinx\Db\Adapter;
 
 use BadMethodCallException;
+use Phinx\Util\Util;
 use Phinx\Db\Table;
 use Phinx\Migration\MigrationInterface;
 
@@ -236,20 +237,20 @@ abstract class PdoAdapter extends AbstractAdapter
     {
         $result = [];
 
-        switch ($this->options['version_order']) {
-            case \Phinx\Config\Config::VERSION_ORDER_CREATION_TIME:
-                $orderBy = 'version ASC';
-                break;
-            case \Phinx\Config\Config::VERSION_ORDER_EXECUTION_TIME:
-                $orderBy = 'start_time ASC, version ASC';
-                break;
-            default:
-                throw new \RuntimeException('Invalid version_order configuration option');
+        $orderBy = '';
+        if ($this->options['version_order'] === \Phinx\Config\Config::VERSION_ORDER_EXECUTION_TIME) {
+            $orderBy = 'ORDER BY start_time ASC';
         }
 
-        $rows = $this->fetchAll(sprintf('SELECT * FROM %s ORDER BY %s', $this->getSchemaTableName(), $orderBy));
+        $rows = $this->fetchAll(sprintf('SELECT * FROM %s %s', $this->getSchemaTableName(), $orderBy));
         foreach ($rows as $version) {
             $result[$version['version']] = $version;
+        }
+
+        if ($this->options['version_order'] === \Phinx\Config\Config::VERSION_ORDER_CREATION_TIME) {
+            uksort($result, function ($left, $right) {
+                return Util::compareVersion($left, $right);
+            });
         }
 
         return $result;
