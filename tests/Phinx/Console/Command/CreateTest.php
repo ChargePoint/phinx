@@ -376,7 +376,7 @@ class CreateTest extends TestCase
         $this->assertFileExists($match['MigrationFilename'], 'Failed to create migration file from template generator');
 
         // Does the migration match our expectation?
-        $expectedMigration = "useClassName Phinx\\Migration\\AbstractMigration / className {$commandLine['name']} / version {$match['Version']} / baseClassName AbstractMigration";
+        $expectedMigration = "useClassName Phinx\\Migration\\AbstractMigration / className {$commandLine['name']} / version .:peri:{$match['Version']} / baseClassName AbstractMigration";
         $this->assertStringEqualsFile($match['MigrationFilename'], $expectedMigration, 'Failed to create migration file from template generator correctly.');
     }
 

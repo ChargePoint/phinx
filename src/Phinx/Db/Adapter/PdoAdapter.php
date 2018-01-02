@@ -237,6 +237,14 @@ abstract class PdoAdapter extends AbstractAdapter
     {
         $result = [];
 
+        switch ($this->options['version_order']) {
+            case \Phinx\Config\Config::VERSION_ORDER_CREATION_TIME:
+            case \Phinx\Config\Config::VERSION_ORDER_EXECUTION_TIME:
+                break;
+            default:
+                throw new \RuntimeException('Invalid version_order configuration option');
+        }
+
         $orderBy = '';
         if ($this->options['version_order'] === \Phinx\Config\Config::VERSION_ORDER_EXECUTION_TIME) {
             $orderBy = 'ORDER BY start_time ASC';

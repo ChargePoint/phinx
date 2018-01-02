@@ -111,7 +111,7 @@ class PdoAdapterTest extends TestCase
 
         $adapter->expects($this->once())
             ->method('fetchAll')
-            ->with("SELECT * FROM $schemaTableName ORDER BY $expectedOrderBy")
+            ->with("SELECT * FROM $schemaTableName $expectedOrderBy")
             ->will($this->returnValue($mockRows));
 
         // we expect the mock rows but indexed by version creation time
@@ -133,10 +133,10 @@ class PdoAdapterTest extends TestCase
     {
         return [
             'With Creation Time Version Order' => [
-                \Phinx\Config\Config::VERSION_ORDER_CREATION_TIME, 'version ASC'
+                \Phinx\Config\Config::VERSION_ORDER_CREATION_TIME, ''
             ],
             'With Execution Time Version Order' => [
-                \Phinx\Config\Config::VERSION_ORDER_EXECUTION_TIME, 'start_time ASC, version ASC'
+                \Phinx\Config\Config::VERSION_ORDER_EXECUTION_TIME, 'ORDER BY start_time ASC'
             ],
         ];
     }
