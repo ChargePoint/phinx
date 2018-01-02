@@ -124,97 +124,60 @@ class Manager
             }
 
             $output->writeln(" Status  $migrationIdAndStartedHeader  Finished             Migration Name ");
-            $output->writeln('----------------------------------------------------------------------------------');
+            $output->writeln('--------------------------------------------------------------------------------------------');
 
             $env = $this->getEnvironment($environment);
             $versions = $env->getVersionLog();
 
-            $maxNameLength = $versions ? max(array_map(function ($version) {
+            $allMigrations = [];
+            foreach ($migrations as $migrationVersion => $migration) {
+                $allMigrations[$migrationVersion] = [
+                    'migration_name' => $migration->getName(),
+                    'version' => $migration->getVersion(),
+                    'start_time' => '',
+                    'end_time' => '',
+                    'breakpoint' => 0
+                ];
+            }
+            $allMigrations = array_merge($allMigrations, $versions);
+            Util::sortVersionMap($allMigrations);
+
+            $maxNameLength = $versions ? max(array_merge(array_map(function ($version) {
                 return strlen($version['migration_name']);
-            }, $versions)) : 0;
+            }, $allMigrations), [15])) : 0;
 
-            $missingVersions = array_diff_key($versions, $migrations);
+            $lastRanVersion = Util::maxVersion(array_keys($versions));
+            $mustHaveRunMigrations = array_filter(array_keys($allMigrations), function ($version) use ($lastRanVersion) {
+                return Util::compareVersion($version, $lastRanVersion) <= 0;
+            });
 
-            $hasMissingMigration = !empty($missingVersions);
-
-            // get the migrations sorted in the same way as the versions
-            $sortedMigrations = [];
-
-            foreach ($versions as $versionCreationTime => $version) {
-                if (isset($migrations[$versionCreationTime])) {
-                    array_push($sortedMigrations, $migrations[$versionCreationTime]);
-                    unset($migrations[$versionCreationTime]);
-                }
-            }
-
-            if (empty($sortedMigrations) && !empty($missingVersions)) {
-                // this means we have no up migrations, so we write all the missing versions already so they show up
-                // before any possible down migration
-                foreach ($missingVersions as $missingVersionCreationTime => $missingVersion) {
-                    $this->printMissingVersion($missingVersion, $maxNameLength);
-
-                    unset($missingVersions[$missingVersionCreationTime]);
-                }
-            }
-
-            // any migration left in the migrations (ie. not unset when sorting the migrations by the version order) is
-            // a migration that is down, so we add them to the end of the sorted migrations list
-            if (!empty($migrations)) {
-                $sortedMigrations = array_merge($sortedMigrations, $migrations);
-            }
-
-            foreach ($sortedMigrations as $migration) {
-                $version = array_key_exists($migration->getVersion(), $versions) ? $versions[$migration->getVersion()] : false;
-                if ($version) {
-                    // check if there are missing versions before this version
-                    foreach ($missingVersions as $missingVersionCreationTime => $missingVersion) {
-                        if ($this->getConfig()->isVersionOrderCreationTime()) {
-                            if ($missingVersion['version'] > $version['version']) {
-                                break;
-                            }
-                        } else {
-                            if ($missingVersion['start_time'] > $version['start_time']) {
-                                break;
-                            } elseif ($missingVersion['start_time'] == $version['start_time'] &&
-                                $missingVersion['version'] > $version['version']) {
-                                break;
-                            }
-                        }
-
-                        $this->printMissingVersion($missingVersion, $maxNameLength);
-
-                        unset($missingVersions[$missingVersionCreationTime]);
-                    }
+            foreach ($allMigrations as $migrationVersion => $migration) {
+                if (array_key_exists($migrationVersion, $versions)) {
+                    $isMigrationMissing = !in_array($migrationVersion, array_keys($migrations));
 
                     $status = '     <info>up</info> ';
                 } else {
+                    $isMigrationMissing = in_array($migrationVersion, $mustHaveRunMigrations);
                     $hasDownMigration = true;
                     $status = '   <error>down</error> ';
                 }
-                $maxNameLength = max($maxNameLength, strlen($migration->getName()));
 
                 $output->writeln(sprintf(
-                    '%s %24s  %19s  %19s  <comment>%s</comment>',
+                    '%s %24s  %19s  %19s  <comment>%s</comment> %s',
                     $status,
-                    $migration->getVersion(),
-                    $version['start_time'],
-                    $version['end_time'],
-                    $migration->getName()
+                    $migrationVersion,
+                    $migration['start_time'],
+                    $migration['end_time'],
+                    str_pad($migration['migration_name'], $maxNameLength, ' '),
+                    $isMigrationMissing ? '<error>** MISSING **</error>' : ''
                 ));
 
-                if ($version && $version['breakpoint']) {
+                if ($migration && $migration['breakpoint']) {
                     $output->writeln('         <error>BREAKPOINT SET</error>');
                 }
 
-                $migrations[] = ['migration_status' => trim(strip_tags($status)), 'migration_id' => sprintf('%14.0f', $migration->getVersion()), 'migration_name' => $migration->getName()];
-                unset($versions[$migration->getVersion()]);
-            }
-
-            // and finally add any possibly-remaining missing migrations
-            foreach ($missingVersions as $missingVersionCreationTime => $missingVersion) {
-                $this->printMissingVersion($missingVersion, $maxNameLength);
-
-                unset($missingVersions[$missingVersionCreationTime]);
+                $migrations[] = ['migration_status' => trim(strip_tags($status)), 'migration_id' => sprintf('%14.0f', $migrationVersion), 'migration_name' => $migration['migration_name']];
+                unset($versions[$migrationVersion]);
             }
         } else {
             // there are no migrations
@@ -245,27 +208,6 @@ class Manager
             return self::EXIT_STATUS_DOWN;
         } else {
             return 0;
-        }
-    }
-
-    /**
-     * Print Missing Version
-     *
-     * @param array     $version        The missing version to print (in the format returned by Environment.getVersionLog).
-     * @param int   $maxNameLength  The maximum migration name length.
-     */
-    private function printMissingVersion($version, $maxNameLength)
-    {
-        $this->getOutput()->writeln(sprintf(
-            '     <error>up</error>  %14.0f  %19s  %19s  <comment>%s</comment>  <error>** MISSING **</error>',
-            $version['version'],
-            $version['start_time'],
-            $version['end_time'],
-            str_pad($version['migration_name'], $maxNameLength, ' ')
-        ));
-
-        if ($version && $version['breakpoint']) {
-            $this->getOutput()->writeln('         <error>BREAKPOINT SET</error>');
         }
     }
 
