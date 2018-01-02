@@ -51,6 +51,11 @@ abstract class AbstractMigration implements MigrationInterface
     protected $version;
 
     /**
+     * @var string
+     */
+    protected $content;
+
+    /**
      * @var \Phinx\Db\Adapter\AdapterInterface
      */
     protected $adapter;
@@ -131,6 +136,24 @@ abstract class AbstractMigration implements MigrationInterface
     public function getAdapter()
     {
         return $this->adapter;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setContent($content)
+    {
+        $this->content = $content;
+
+        return $this;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function getContent()
+    {
+        return $this->content;
     }
 
     /**

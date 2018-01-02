@@ -84,6 +84,21 @@ interface MigrationInterface
     public function getAdapter();
 
     /**
+     * Sets the migration content.
+     *
+     * @param string $content Migration content
+     * @return \Phinx\Migration\MigrationInterface
+     */
+    public function setContent($content);
+
+    /**
+     * Gets the migration content.
+     *
+     * @return string
+     */
+    public function getContent();
+
+    /**
      * Sets the input object to be used in migration object
      *
      * @param \Symfony\Component\Console\Input\InputInterface $input

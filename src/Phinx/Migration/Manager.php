@@ -623,7 +623,9 @@ class Manager
                     }
 
                     // instantiate it
+                    /** @var \Phinx\Migration\AbstractMigration $migration */
                     $migration = new $class($version, $this->getInput(), $this->getOutput());
+                    $migration->setContent(file_get_contents($filePath));
 
                     if (!($migration instanceof AbstractMigration)) {
                         throw new \InvalidArgumentException(sprintf(

@@ -270,18 +270,20 @@ abstract class PdoAdapter extends AbstractAdapter
         if (strcasecmp($direction, MigrationInterface::UP) === 0) {
             // up
             $sql = sprintf(
-                "INSERT INTO %s (%s, %s, %s, %s, %s) VALUES ('%s', '%s', '%s', '%s', %s);",
+                "INSERT INTO %s (%s, %s, %s, %s, %s, %s) VALUES ('%s', '%s', '%s', '%s', %s, '%s');",
                 $this->getSchemaTableName(),
                 $this->quoteColumnName('version'),
                 $this->quoteColumnName('migration_name'),
                 $this->quoteColumnName('start_time'),
                 $this->quoteColumnName('end_time'),
                 $this->quoteColumnName('breakpoint'),
+                $this->quoteColumnName('content'),
                 $migration->getVersion(),
                 substr($migration->getName(), 0, 100),
                 $startTime,
                 $endTime,
-                $this->castToBool(false)
+                $this->castToBool(false),
+                $migration->getContent()
             );
 
             $this->execute($sql);

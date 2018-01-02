@@ -220,6 +220,7 @@ abstract class AbstractAdapter implements AdapterInterface
                 ->addColumn('start_time', 'timestamp', ['default' => null, 'null' => true])
                 ->addColumn('end_time', 'timestamp', ['default' => null, 'null' => true])
                 ->addColumn('breakpoint', 'boolean', ['default' => false])
+                ->addColumn('content', 'text')
                 ->save();
         } catch (\Exception $exception) {
             throw new \InvalidArgumentException('There was a problem creating the schema table: ' . $exception->getMessage());
