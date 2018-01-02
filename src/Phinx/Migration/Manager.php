@@ -261,11 +261,8 @@ class Manager
 
         Util::sortVersionMap($migrations);
         foreach ($migrations as $migration) {
-            if (Util::compareVersion($migration->getVersion(), $version) > 0) {
-                break;
-            }
-
-            if (!in_array($migration->getVersion(), $versions)) {
+            if (Util::compareVersion($migration->getVersion(), $current) > 0
+                && !in_array($migration->getVersion(), $versions)) {
                 $this->executeMigration($environment, $migration, MigrationInterface::UP);
             }
         }
