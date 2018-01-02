@@ -38,7 +38,7 @@ class Util
     /**
      * @var string
      */
-    const DELTASET_NAME_PATTERN = '/^\d+(?:.\d){0,3}/';
+    const DELTASET_NAME_PATTERN = '/^\d+(?:.\d){0,3}$/';
 
     /**
      * @var string
@@ -102,8 +102,24 @@ class Util
     {
         $matches = [];
         preg_match(static::MIGRATION_FILE_VERSION_PATTERN, basename($filePath), $matches);
+        $version[] = $matches[0];
 
-        return basename(dirname($filePath)).':'.$matches[0];
+        $parentDirName = strtolower(basename(dirname($filePath)));
+
+        switch ($parentDirName) {
+            case 'pre':
+            case 'post':
+            case 'peri':
+                $version[] = $parentDirName;
+                $parentDirName = basename(dirname(dirname($filePath)));
+            break;
+
+            default: $version[] = 'peri';
+        }
+
+        $version[] = $parentDirName;
+
+        return implode(':', array_reverse($version));
     }
 
     /**
@@ -188,7 +204,14 @@ class Util
     {
         $matches = [];
 
-        return preg_match(static::DELTASET_NAME_PATTERN, basename(dirname($filePath)), $matches)
+        $parentDirName = basename(dirname($filePath));
+        $prePeriPost = preg_match('/^(pre|peri|post)$/', $parentDirName, $matches);
+
+        if ($prePeriPost) {
+            $parentDirName = basename(dirname(dirname($filePath)));
+        }
+
+        return preg_match(static::DELTASET_NAME_PATTERN, $parentDirName, $matches)
             && preg_match(static::MIGRATION_FILE_NAME_PATTERN, basename($filePath), $matches);
     }
 
@@ -234,6 +257,44 @@ class Util
     }
 
     public static function compareVersion($left, $right)
+    {
+        $leftVersions = preg_split('/:/', $left);
+        $rightVersions = preg_split('/:/', $right);
+
+        if (($ret = Util::compareSemVer($leftVersions[0], $rightVersions[0])) != 0) {
+            return $ret;
+        }
+
+        if (($ret = Util::comparePrefix($leftVersions[1], $rightVersions[1])) != 0 ) {
+            return $ret;
+        }
+
+        return Util::compareSemVer($leftVersions[2], $rightVersions[2]);
+    }
+
+    private static function comparePrefix($left, $right) {
+        if ($left !== $right) {
+            if ($left === 'pre') {
+                return -1;
+            }
+
+            if ($right === 'pre') {
+                return 1;
+            }
+
+            if ($left === 'post') {
+                return 1;
+            }
+
+            if ($right === 'post') {
+                return -1;
+            }
+        }
+
+        return 0;
+    }
+
+    public static function compareSemVer($left, $right)
     {
         $leftVersions = preg_split('/\./', $left);
         $rightVersions = preg_split('/\./', $right);

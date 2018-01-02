@@ -114,10 +114,10 @@ class Manager
 
             switch ($this->getConfig()->getVersionOrder()) {
                 case \Phinx\Config\Config::VERSION_ORDER_CREATION_TIME:
-                    $migrationIdAndStartedHeader = "<info>[Migration ID]</info>  Started            ";
+                    $migrationIdAndStartedHeader = "<info>[Migration ID]          </info>  Started            ";
                     break;
                 case \Phinx\Config\Config::VERSION_ORDER_EXECUTION_TIME:
-                    $migrationIdAndStartedHeader = "Migration ID    <info>[Started          ]</info>";
+                    $migrationIdAndStartedHeader = "Migration ID              <info>[Started          ]</info>";
                     break;
                 default:
                     throw new \RuntimeException('Invalid version_order configuration option');
@@ -194,7 +194,7 @@ class Manager
                 $maxNameLength = max($maxNameLength, strlen($migration->getName()));
 
                 $output->writeln(sprintf(
-                    '%s %14s  %19s  %19s  <comment>%s</comment>',
+                    '%s %24s  %19s  %19s  <comment>%s</comment>',
                     $status,
                     $migration->getVersion(),
                     $version['start_time'],
@@ -319,7 +319,7 @@ class Manager
 
         Util::sortVersionMap($migrations);
         foreach ($migrations as $migration) {
-            if (Util::compareVersion($migration->getVersion(), $version) <= 0) {
+            if (Util::compareVersion($migration->getVersion(), $version) > 0) {
                 break;
             }
 
@@ -720,7 +720,10 @@ class Manager
         foreach ($paths as $path) {
             $files = array_merge(
                 $files,
-                Util::glob($path . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*.php')
+                Util::glob($path . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*.php'),
+                Util::glob($path . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . 'pre' . DIRECTORY_SEPARATOR . '*.php'),
+                Util::glob($path . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . 'peri' . DIRECTORY_SEPARATOR . '*.php'),
+                Util::glob($path . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . 'post' . DIRECTORY_SEPARATOR . '*.php')
             );
         }
         // glob() can return the same file multiple times
