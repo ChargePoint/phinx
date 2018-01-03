@@ -48,7 +48,11 @@ class Util
     /**
      * @var string
      */
-    const MIGRATION_FILE_NAME_PATTERN = '/^\d+(?:.\d)?(?:_([\w-]+).php|.sql)$/i';
+    const PHP_MIGRATION_FILE_NAME_PATTERN = '/^\d+(?:.\d)?_([\w-]+).php$/i';
+    /**
+     * @var string
+     */
+    const SQL_MIGRATION_FILE_NAME_PATTERN = '/^\d+(?:.\d)?(?:_([\w-]+))?.sql$/i';
 
     /**
      * @var string
@@ -149,8 +153,13 @@ class Util
     public static function mapFileNameToClassName($fileName)
     {
         $matches = [];
-        if (preg_match(static::MIGRATION_FILE_NAME_PATTERN, $fileName, $matches)) {
+
+        if (preg_match(static::PHP_MIGRATION_FILE_NAME_PATTERN, $fileName, $matches)) {
             $fileName = $matches[1];
+        } else if (preg_match(static::SQL_MIGRATION_FILE_NAME_PATTERN, $fileName, $matches) && count($matches) > 1) {
+            $fileName = $matches[1];
+        } else {
+            $fileName = '';
         }
 
         return str_replace(' ', '', ucwords(str_replace('_', ' ', $fileName)));
@@ -212,7 +221,9 @@ class Util
         }
 
         return preg_match(static::DELTASET_NAME_PATTERN, $parentDirName, $matches)
-            && preg_match(static::MIGRATION_FILE_NAME_PATTERN, basename($filePath), $matches);
+            && (preg_match(static::PHP_MIGRATION_FILE_NAME_PATTERN, basename($filePath), $matches)
+                || preg_match(static::SQL_MIGRATION_FILE_NAME_PATTERN, basename($filePath), $matches)
+            );
     }
 
     /**

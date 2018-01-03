@@ -596,25 +596,26 @@ class Manager
                         throw new \InvalidArgumentException(sprintf('Duplicate migration - "%s" has the same version as "%s"', $filePath, $versions[$version]->getVersion()));
                     }
 
+                    $config = $this->getConfig();
+                    $namespace = $config instanceof NamespaceAwareInterface ? $config->getMigrationNamespaceByPath(dirname($filePath)) : null;
+
+                    // convert the filename to a class name
+                    $class = ($namespace === null ? '' : $namespace . '\\') . Util::mapFileNameToClassName(basename($filePath));
+
+                    if ($class !== '' && isset($fileNames[$class])) {
+                        throw new \InvalidArgumentException(sprintf(
+                            'Migration "%s" has the same name as "%s"',
+                            basename($filePath),
+                            $fileNames[$class]
+                        ));
+                    }
+
+                    $fileNames[$class] = basename($filePath);
+
                     $ext = pathinfo($filePath, PATHINFO_EXTENSION);
                     if ($ext === 'php') {
                         // load the php migration file
 
-                        $config = $this->getConfig();
-                        $namespace = $config instanceof NamespaceAwareInterface ? $config->getMigrationNamespaceByPath(dirname($filePath)) : null;
-
-                        // convert the filename to a class name
-                        $class = ($namespace === null ? '' : $namespace . '\\') . Util::mapFileNameToClassName(basename($filePath));
-
-                        if (isset($fileNames[$class])) {
-                            throw new \InvalidArgumentException(sprintf(
-                                'Migration "%s" has the same name as "%s"',
-                                basename($filePath),
-                                $fileNames[$class]
-                            ));
-                        }
-
-                        $fileNames[$class] = basename($filePath);
                         /** @noinspection PhpIncludeInspection */
                         require_once $filePath;
                         if (!class_exists($class)) {
@@ -625,7 +626,12 @@ class Manager
                             ));
                         }
                     } else if ($ext === 'sql') {
-                        $class = '\Phinx\Migration\SQLMigration';
+                        $sqlMigrationClass = '\Phinx\Migration\SQLMigration';
+                        if ($class !== '') {
+                            eval("class $class extends $sqlMigrationClass {}");
+                        } else {
+                            $class = $sqlMigrationClass;
+                        }
                     } else {
                         throw new Exception("File with extension $ext are not supported");
                     }
