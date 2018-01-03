@@ -48,7 +48,7 @@ class Util
     /**
      * @var string
      */
-    const MIGRATION_FILE_NAME_PATTERN = '/^\d+(?:.\d)?_([\w-]+).php$/i';
+    const MIGRATION_FILE_NAME_PATTERN = '/^\d+(?:.\d)?(?:_([\w-]+).php|.sql)$/i';
 
     /**
      * @var string

@@ -559,4 +559,11 @@ interface AdapterInterface
      * @return mixed
      */
     public function castToBool($value);
+
+    /**
+     * Runs given sql using database client installed on machine
+     * @param $sql
+     * @return void
+     */
+    public function runUsingBinary($sql);
 }

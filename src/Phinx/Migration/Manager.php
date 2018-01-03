@@ -34,6 +34,7 @@ use Phinx\Migration\Manager\Environment;
 use Phinx\Seed\AbstractSeed;
 use Phinx\Seed\SeedInterface;
 use Phinx\Util\Util;
+use Symfony\Component\Config\Definition\Exception\Exception;
 use Symfony\Component\Console\Input\InputInterface;
 use Symfony\Component\Console\Output\OutputInterface;
 
@@ -580,14 +581,14 @@ class Manager
     public function getMigrations()
     {
         if ($this->migrations === null) {
-            $phpFiles = $this->getMigrationFiles();
+            $migrationFiles = $this->getMigrationFiles();
 
             // filter the files to only get the ones that match our naming scheme
             $fileNames = [];
             /** @var \Phinx\Migration\AbstractMigration[] $versions */
             $versions = [];
 
-            foreach ($phpFiles as $filePath) {
+            foreach ($migrationFiles as $filePath) {
                 if (Util::isValidMigrationFilePath($filePath)) {
                     $version = Util::getVersionFromFilePath($filePath);
 
@@ -595,37 +596,43 @@ class Manager
                         throw new \InvalidArgumentException(sprintf('Duplicate migration - "%s" has the same version as "%s"', $filePath, $versions[$version]->getVersion()));
                     }
 
-                    $config = $this->getConfig();
-                    $namespace = $config instanceof NamespaceAwareInterface ? $config->getMigrationNamespaceByPath(dirname($filePath)) : null;
+                    $ext = pathinfo($filePath, PATHINFO_EXTENSION);
+                    if ($ext === 'php') {
+                        // load the php migration file
 
-                    // convert the filename to a class name
-                    $class = ($namespace === null ? '' : $namespace . '\\') . Util::mapFileNameToClassName(basename($filePath));
+                        $config = $this->getConfig();
+                        $namespace = $config instanceof NamespaceAwareInterface ? $config->getMigrationNamespaceByPath(dirname($filePath)) : null;
 
-                    if (isset($fileNames[$class])) {
-                        throw new \InvalidArgumentException(sprintf(
-                            'Migration "%s" has the same name as "%s"',
-                            basename($filePath),
-                            $fileNames[$class]
-                        ));
-                    }
+                        // convert the filename to a class name
+                        $class = ($namespace === null ? '' : $namespace . '\\') . Util::mapFileNameToClassName(basename($filePath));
 
-                    $fileNames[$class] = basename($filePath);
+                        if (isset($fileNames[$class])) {
+                            throw new \InvalidArgumentException(sprintf(
+                                'Migration "%s" has the same name as "%s"',
+                                basename($filePath),
+                                $fileNames[$class]
+                            ));
+                        }
 
-                    // load the migration file
-                    /** @noinspection PhpIncludeInspection */
-                    require_once $filePath;
-                    if (!class_exists($class)) {
-                        throw new \InvalidArgumentException(sprintf(
-                            'Could not find class "%s" in file "%s"',
-                            $class,
-                            $filePath
-                        ));
+                        $fileNames[$class] = basename($filePath);
+                        /** @noinspection PhpIncludeInspection */
+                        require_once $filePath;
+                        if (!class_exists($class)) {
+                            throw new \InvalidArgumentException(sprintf(
+                                'Could not find class "%s" in file "%s"',
+                                $class,
+                                $filePath
+                            ));
+                        }
+                    } else if ($ext === 'sql') {
+                        $class = '\Phinx\Migration\SQLMigration';
+                    } else {
+                        throw new Exception("File with extension $ext are not supported");
                     }
 
                     // instantiate it
                     /** @var \Phinx\Migration\AbstractMigration $migration */
                     $migration = new $class($version, $this->getInput(), $this->getOutput());
-                    $migration->setContent(file_get_contents($filePath));
 
                     if (!($migration instanceof AbstractMigration)) {
                         throw new \InvalidArgumentException(sprintf(
@@ -634,6 +641,8 @@ class Manager
                             $filePath
                         ));
                     }
+
+                    $migration->setContent(file_get_contents($filePath));
 
                     $versions[$version] = $migration;
                 }
@@ -661,10 +670,10 @@ class Manager
         foreach ($paths as $path) {
             $files = array_merge(
                 $files,
-                Util::glob($path . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*.php'),
-                Util::glob($path . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . 'pre' . DIRECTORY_SEPARATOR . '*.php'),
-                Util::glob($path . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . 'peri' . DIRECTORY_SEPARATOR . '*.php'),
-                Util::glob($path . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . 'post' . DIRECTORY_SEPARATOR . '*.php')
+                Util::glob($path . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . '*.{php,sql}'),
+                Util::glob($path . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . 'pre' . DIRECTORY_SEPARATOR . '*.{php,sql}'),
+                Util::glob($path . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . 'peri' . DIRECTORY_SEPARATOR . '*.{php,sql}'),
+                Util::glob($path . DIRECTORY_SEPARATOR . '*' . DIRECTORY_SEPARATOR . 'post' . DIRECTORY_SEPARATOR . '*.{php,sql}')
             );
         }
         // glob() can return the same file multiple times

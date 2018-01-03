@@ -1114,4 +1114,36 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
     {
         return array_merge(parent::getColumnTypes(), ['enum', 'set', 'year', 'json']);
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function runUsingBinary($sql)
+    {
+        $tempFile = tempnam(sys_get_temp_dir(), 'phinx');
+        file_put_contents($tempFile, $sql);
+
+        $dbOptionCmds = [
+            'host' => '--host',
+            'port' => '--port',
+            'user' => '--user',
+            'pass' => '--password',
+            'name' => '--database',
+            ];
+
+        $dbOptions = [];
+        $options = $this->getOptions();
+        foreach ($dbOptionCmds as $dbOption => $cmdParam) {
+            $dbOptions[] = "$cmdParam={$options[$dbOption]}";
+        }
+        $dbOptions = implode(" ", $dbOptions);
+
+        exec("mysql $dbOptions < $tempFile 2>&1", $retArr, $retVal);
+
+        if ($retVal) {
+            throw new \RuntimeException(
+                sprintf("Failed to run migration. \n%s", implode(PHP_EOL, $retArr))
+            );
+        }
+    }
 }

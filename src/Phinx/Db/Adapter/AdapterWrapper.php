@@ -550,4 +550,12 @@ abstract class AdapterWrapper implements AdapterInterface, WrapperInterface
     {
         return $this->getAdapter()->getConnection();
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function runUsingBinary($sql)
+    {
+        $this->getAdapter()->runUsingBinary($sql);
+    }
 }

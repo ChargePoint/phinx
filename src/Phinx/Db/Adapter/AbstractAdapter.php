@@ -254,4 +254,12 @@ abstract class AbstractAdapter implements AdapterInterface
 
         return ($input && $input->hasOption('dry-run')) ? $input->getOption('dry-run') : false;
     }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function runUsingBinary($sql)
+    {
+        throw new \Exception('Not implemented');
+    }
 }
