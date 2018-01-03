@@ -1120,6 +1120,12 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
      */
     public function runUsingBinary($sql)
     {
+        if ($this->isDryRunEnabled()) {
+            $this->getOutput()->writeln($sql);
+
+            return;
+        }
+
         $tempFile = tempnam(sys_get_temp_dir(), 'phinx');
         file_put_contents($tempFile, $sql);
 
