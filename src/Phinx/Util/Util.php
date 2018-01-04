@@ -162,7 +162,7 @@ class Util
             $fileName = '';
         }
 
-        return str_replace(' ', '', ucwords(str_replace('_', ' ', $fileName)));
+        return $fileName;
     }
 
     /**
