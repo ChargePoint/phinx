@@ -136,6 +136,14 @@ interface MigrationInterface
     public function getName();
 
     /**
+     * Sets the name.
+     *
+     * @param string $name
+     * @return \Phinx\Migration\MigrationInterface
+     */
+    public function setName($name);
+
+    /**
      * Sets the migration version number.
      *
      * @param float $version Version

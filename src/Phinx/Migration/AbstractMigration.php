@@ -53,6 +53,11 @@ abstract class AbstractMigration implements MigrationInterface
     /**
      * @var string
      */
+    protected $name;
+
+    /**
+     * @var string
+     */
     protected $content;
 
     /**
@@ -197,7 +202,17 @@ abstract class AbstractMigration implements MigrationInterface
      */
     public function getName()
     {
-        return get_class($this);
+        return empty($this->name) ? get_class($this) : $this->name;
+    }
+
+    /**
+     * {@inheritdoc}
+     */
+    public function setName($name)
+    {
+        $this->name = $name;
+
+        return $this;
     }
 
     /**

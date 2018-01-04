@@ -600,50 +600,49 @@ class Manager
                     $namespace = $config instanceof NamespaceAwareInterface ? $config->getMigrationNamespaceByPath(dirname($filePath)) : null;
 
                     // convert the filename to a class name
-                    $class = ($namespace === null ? '' : $namespace . '\\') . Util::mapFileNameToClassName(basename($filePath));
+                    $migrationName = $className = ($namespace === null ? '' : $namespace . '\\') . Util::mapFileNameToClassName(basename($filePath));
+                    $uniqueClassName = $className . str_replace(':', '__', str_replace('.', '_', $version));
 
-                    if ($class !== '' && isset($fileNames[$class])) {
-                        throw new \InvalidArgumentException(sprintf(
-                            'Migration "%s" has the same name as "%s"',
-                            basename($filePath),
-                            $fileNames[$class]
-                        ));
-                    }
+                    switch ($ext = pathinfo($filePath, PATHINFO_EXTENSION)) {
+                        case 'php':
+                            // load the php migration file
+                            file_put_contents($filePath, str_replace("class $className", "class $uniqueClassName", file_get_contents($filePath)));
+                            /** @noinspection PhpIncludeInspection */
+                            require_once $filePath;
+                            file_put_contents($filePath, str_replace("class $uniqueClassName", "class $className", file_get_contents($filePath)));
 
-                    $fileNames[$class] = basename($filePath);
+                            if (!class_exists($uniqueClassName)) {
+                                throw new \InvalidArgumentException(sprintf(
+                                    'Could not find class "%s" in file "%s"',
+                                    $className,
+                                    $filePath
+                                ));
+                            }
 
-                    $ext = pathinfo($filePath, PATHINFO_EXTENSION);
-                    if ($ext === 'php') {
-                        // load the php migration file
+                            $className = $uniqueClassName;
+                            break;
+                        case 'sql':
+                            $sqlMigrationClass = '\Phinx\Migration\SQLMigration';
+                            if ($className !== '') {
+                                eval("class $className extends $sqlMigrationClass {}");
+                            } else {
+                                $className = $sqlMigrationClass;
+                            }
 
-                        /** @noinspection PhpIncludeInspection */
-                        require_once $filePath;
-                        if (!class_exists($class)) {
-                            throw new \InvalidArgumentException(sprintf(
-                                'Could not find class "%s" in file "%s"',
-                                $class,
-                                $filePath
-                            ));
-                        }
-                    } else if ($ext === 'sql') {
-                        $sqlMigrationClass = '\Phinx\Migration\SQLMigration';
-                        if ($class !== '') {
-                            eval("class $class extends $sqlMigrationClass {}");
-                        } else {
-                            $class = $sqlMigrationClass;
-                        }
-                    } else {
-                        throw new Exception("File with extension $ext are not supported");
+                            break;
+                        default:
+                            throw new Exception("File with extension $ext are not supported");
                     }
 
                     // instantiate it
                     /** @var \Phinx\Migration\AbstractMigration $migration */
-                    $migration = new $class($version, $this->getInput(), $this->getOutput());
+                    $migration = new $className($version, $this->getInput(), $this->getOutput());
+                    $migration->setName($migrationName);
 
                     if (!($migration instanceof AbstractMigration)) {
                         throw new \InvalidArgumentException(sprintf(
                             'The class "%s" in file "%s" must extend \Phinx\Migration\AbstractMigration',
-                            $class,
+                            $className,
                             $filePath
                         ));
                     }
