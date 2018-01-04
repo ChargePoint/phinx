@@ -38,21 +38,21 @@ class Util
     /**
      * @var string
      */
-    const DELTASET_NAME_PATTERN = '/^\d+(?:.\d){0,3}$/';
+    const DELTASET_NAME_PATTERN = '/^\d+(?:.\d+){0,3}$/';
 
     /**
      * @var string
      */
-    const MIGRATION_FILE_VERSION_PATTERN = '/^\d+(?:.\d)?/';
+    const MIGRATION_FILE_VERSION_PATTERN = '/^\d+(?:.\d+)?/';
 
     /**
      * @var string
      */
-    const PHP_MIGRATION_FILE_NAME_PATTERN = '/^\d+(?:.\d)?_([\w-]+).php$/i';
+    const PHP_MIGRATION_FILE_NAME_PATTERN = '/^\d+(?:.\d+)?_([\w-]+).php$/i';
     /**
      * @var string
      */
-    const SQL_MIGRATION_FILE_NAME_PATTERN = '/^\d+(?:.\d)?(?:_([\w-]+))?.sql$/i';
+    const SQL_MIGRATION_FILE_NAME_PATTERN = '/^\d+(?:.\d+)?(?:_([\w-]+))?.sql$/i';
 
     /**
      * @var string
