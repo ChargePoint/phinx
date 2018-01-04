@@ -124,12 +124,22 @@ abstract class PdoAdapter extends AbstractAdapter
     /**
      * {@inheritdoc}
      */
-    public function execute($sql)
+    public function execute($sql, $bindParams = [])
     {
         if ($this->isDryRunEnabled()) {
             $this->getOutput()->writeln($sql);
 
+            if (count($bindParams) > 0) {
+                $this->getOutput()->writeln(["with bind params", print_r($bindParams, true)]);
+            }
+
             return 0;
+        }
+
+        if (count($bindParams) > 0) {
+            return $this->getConnection()
+                ->prepare($sql)
+                ->execute($bindParams);
         }
 
         return $this->getConnection()->exec($sql);
@@ -270,23 +280,24 @@ abstract class PdoAdapter extends AbstractAdapter
         if (strcasecmp($direction, MigrationInterface::UP) === 0) {
             // up
             $sql = sprintf(
-                "INSERT INTO %s (%s, %s, %s, %s, %s, %s) VALUES ('%s', '%s', '%s', '%s', %s, '%s');",
+                "INSERT INTO %s (%s, %s, %s, %s, %s, %s) VALUES (?, ?, ?, ?, ?, ?);",
                 $this->getSchemaTableName(),
                 $this->quoteColumnName('version'),
                 $this->quoteColumnName('migration_name'),
                 $this->quoteColumnName('start_time'),
                 $this->quoteColumnName('end_time'),
                 $this->quoteColumnName('breakpoint'),
-                $this->quoteColumnName('content'),
+                $this->quoteColumnName('content')
+            );
+
+            $this->execute($sql, [
                 $migration->getVersion(),
                 substr($migration->getName(), 0, 100),
                 $startTime,
                 $endTime,
                 $this->castToBool(false),
                 $migration->getContent()
-            );
-
-            $this->execute($sql);
+            ]);
         } else {
             // down
             $sql = sprintf(
