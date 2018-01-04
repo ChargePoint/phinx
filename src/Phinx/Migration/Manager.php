@@ -601,15 +601,15 @@ class Manager
 
                     // convert the filename to a class name
                     $migrationName = $className = ($namespace === null ? '' : $namespace . '\\') . Util::mapFileNameToClassName(basename($filePath));
-                    $uniqueClassName = $className . str_replace(':', '__', str_replace('.', '_', $version));
+                    $uniqueClassName = $className . '__' . str_replace(':', '__', str_replace('.', '_', $version));
 
                     switch ($ext = pathinfo($filePath, PATHINFO_EXTENSION)) {
                         case 'php':
                             // load the php migration file
-                            file_put_contents($filePath, str_replace("class $className", "class $uniqueClassName", file_get_contents($filePath)));
+                            file_put_contents($filePath, str_ireplace("class $className", "class $uniqueClassName", file_get_contents($filePath)));
                             /** @noinspection PhpIncludeInspection */
                             require_once $filePath;
-                            file_put_contents($filePath, str_replace("class $uniqueClassName", "class $className", file_get_contents($filePath)));
+                            file_put_contents($filePath, str_ireplace("class $uniqueClassName", "class $className", file_get_contents($filePath)));
 
                             if (!class_exists($uniqueClassName)) {
                                 throw new \InvalidArgumentException(sprintf(
