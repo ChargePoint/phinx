@@ -113,4 +113,46 @@ class UtilTest extends TestCase
         $this->assertEquals('not_a_migration.php', basename($files[2]));
         $this->assertEquals('empty.txt', basename($files[3]));
     }
+
+    /**
+     * @dataProvider compareVersionProvider
+     */
+    public function testCompareVersion($left, $right, $result){
+        $this->assertEquals($result, Util::compareVersion($left, $right));
+    }
+
+    public function compareVersionProvider() {
+        return [
+            ['1:pre:1'    , '1:pre:1'    ,  0],
+            ['1:pre:1'    , '1:pre:2'    ,  -1],
+            ['1:pre:2'    , '1:pre:1'    ,  1],
+            ['1:pre:1'    , '2:pre:1'    ,  -1],
+            ['2:pre:1'    , '1:pre:1'    ,  1],
+            ['1:pre:1'    , '1:peri:1'   ,  -1],
+            ['1:peri:1'   , '1:post:1'   ,  -1],
+            ['1:post:1'   , '1:pre:1'   ,  1],
+        ];
+    }
+
+    /**
+     * @dataProvider compareSemVerProvider
+     */
+    public function testCompareSemVer($left, $right, $result){
+        $this->assertEquals($result, Util::compareSemVer($left, $right));
+    }
+
+    public function compareSemVerProvider() {
+        return [
+            ['1'    , '1'    ,  0],
+            ['2'    , '2'    ,  0],
+            ['1'    , '1.1'  , -1],
+            ['1'    , '1.2'  , -1],
+            ['1.1'  , '1'    ,  1],
+            ['1.2'  , '1'    ,  1],
+            ['1.1'  , '1.1.0',  0],
+            ['1.1.1', '1.1.1',  0],
+            ['1.2.1', '1.0.1',  1],
+            ['5'    , '2.0.1',  1],
+        ];
+    }
 }

@@ -310,12 +310,15 @@ class Util
         $leftVersions = preg_split('/\./', $left);
         $rightVersions = preg_split('/\./', $right);
 
-        for ($i = 0; $i < min(sizeof($leftVersions), sizeof($rightVersions)); ++$i) {
-            if ((int) $leftVersions[$i] < (int) $rightVersions[$i]) {
+        for ($i = 0; $i < max(sizeof($leftVersions), sizeof($rightVersions)); ++$i) {
+            $l = array_key_exists($i, $leftVersions) ? (int) $leftVersions[$i] : 0;
+            $r = array_key_exists($i, $rightVersions) ? (int) $rightVersions[$i] : 0;
+
+            if ($l < $r) {
                 return -1;
             }
 
-            if ((int) $leftVersions[$i] > (int) $rightVersions[$i]) {
+            if ($l > $r) {
                 return 1;
             }
         }
