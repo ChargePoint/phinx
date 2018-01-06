@@ -1120,14 +1120,21 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
      */
     public function runUsingBinary($sql)
     {
+        $transactionalSql = implode(";", [
+            "SET AUTOCOMMIT=0",
+            "START TRANSACTION",
+            $sql,
+            "COMMIT",
+        ]);
+
         if ($this->isDryRunEnabled()) {
-            $this->getOutput()->writeln($sql);
+            $this->getOutput()->writeln($transactionalSql);
 
             return;
         }
 
         $tempFile = tempnam(sys_get_temp_dir(), 'phinx');
-        file_put_contents($tempFile, $sql);
+        file_put_contents($tempFile, $transactionalSql);
 
         $dbOptionCmds = [
             'host' => '--host',
