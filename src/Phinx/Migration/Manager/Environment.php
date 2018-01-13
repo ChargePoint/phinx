@@ -89,10 +89,11 @@ class Environment
      * Executes the specified migration on this environment.
      *
      * @param \Phinx\Migration\MigrationInterface $migration Migration
-     * @param string $direction Direction
+     * @param string  $direction Direction
+     * @param boolean $recordInChangelog Record
      * @return void
      */
-    public function executeMigration(MigrationInterface $migration, $direction = MigrationInterface::UP)
+    public function executeMigration(MigrationInterface $migration, $direction = MigrationInterface::UP, $recordInChangelog = true)
     {
         $direction = ($direction === MigrationInterface::UP) ? MigrationInterface::UP : MigrationInterface::DOWN;
         $migration->setMigratingUp($direction === MigrationInterface::UP);
@@ -133,7 +134,14 @@ class Environment
         }
 
         // Record it in the database
-        $this->getAdapter()->migrated($migration, $direction, date('Y-m-d H:i:s', $startTime), date('Y-m-d H:i:s', time()));
+        if($recordInChangelog) {
+            $this->getAdapter()->migrated(
+                $migration,
+                $direction,
+                date('Y-m-d H:i:s', $startTime),
+                date('Y-m-d H:i:s', time())
+            );
+        }
     }
 
     /**

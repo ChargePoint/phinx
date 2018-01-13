@@ -286,6 +286,22 @@ class Config implements ConfigInterface, NamespaceAwareInterface
     }
 
     /**
+     * {@inheritdoc}
+     */
+    public function getSnapshotPaths()
+    {
+        if (!isset($this->values['paths']['snapshots'])) {
+            throw new \UnexpectedValueException('Snapshots path missing from config file');
+        }
+
+        if (is_string($this->values['paths']['snapshots'])) {
+            $this->values['paths']['snapshots'] = [$this->values['paths']['snapshots']];
+        }
+
+        return $this->values['paths']['snapshots'];
+    }
+
+    /**
      * Get the template file name.
      *
      * @return string|false

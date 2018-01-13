@@ -40,6 +40,8 @@ use Symfony\Component\Console\Output\OutputInterface;
 
 class Manager
 {
+    const DONT_RECORD = false;
+
     /**
      * @var \Phinx\Config\ConfigInterface
      */
@@ -104,8 +106,8 @@ class Manager
     public function printStatus($environment, $format = null)
     {
         $output = $this->getOutput();
-        $hasDownMigration = false;
-        $hasMissingMigration = false;
+        $hasDownMigration = self::DONT_RECORD;
+        $hasMissingMigration = self::DONT_RECORD;
         $migrations = $this->getMigrations();
 
         if (count($migrations)) {
@@ -375,7 +377,7 @@ class Manager
             $found = array_search($target, $migrationNames);
 
             // check on was found
-            if ($found !== false) {
+            if ($found !== self::DONT_RECORD) {
                 $target = (string)$found;
             } else {
                 $this->getOutput()->writeln("<error>No migration found with name ($target)</error>");
@@ -407,7 +409,7 @@ class Manager
         }
 
         // Rollback all versions until we find the wanted rollback target
-        $rollbacked = false;
+        $rollbacked = self::DONT_RECORD;
 
         foreach ($sortedMigrations as $migration) {
             if ($targetMustMatchVersion && $migration->getVersion() == $target) {
@@ -914,5 +916,47 @@ class Manager
             ' %d breakpoints cleared.',
             $this->getEnvironment($environment)->getAdapter()->resetAllBreakpoints()
         ));
+    }
+
+    /**
+     * Restore snapshot
+     *
+     * @param string $environment
+     * @return void
+     */
+    public function restore($environment)
+    {
+        $config = $this->getConfig();
+        $paths = $config->getSnapshotPaths();
+
+        $files = [];
+        foreach ($paths as $path) {
+            $files = array_merge($files, Util::glob($path . DIRECTORY_SEPARATOR . '*.sql'));
+        }
+        // glob() can return the same file multiple times
+        // This will cause the migration to fail with a
+        // false assumption of duplicate migrations
+        // http://php.net/manual/en/function.glob.php#110340
+        $files = array_unique($files);
+
+        $snapshotFiles = [];
+        foreach ($files as $file) {
+            $snapshotFiles[Util::getSnapshotVersionFromFilePath($file)] = $file;
+        }
+
+        $latestSnapshotVersion = Util::maxVersion(array_keys($snapshotFiles));
+        $latestSnapshotFile = $snapshotFiles[$latestSnapshotVersion];
+
+        $this->output->writeln(sprintf(
+            '<info>Restoring snapshot</info> %s using %s',
+            $latestSnapshotVersion,
+            $latestSnapshotFile
+        ));
+
+        $this->getEnvironment($environment)->executeMigration(
+            (new SQLMigration(0))->setContent(file_get_contents($latestSnapshotFile)),
+            MigrationInterface::UP,
+            self::DONT_RECORD
+        );
     }
 }

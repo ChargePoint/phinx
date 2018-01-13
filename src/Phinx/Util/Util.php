@@ -127,6 +127,23 @@ class Util
     }
 
     /**
+     * Get the snapshot version from the beginning of a file name.
+     *
+     * @param string $filePath File Name
+     * @return string
+     * @throws \Exception
+     */
+    public static function getSnapshotVersionFromFilePath($filePath)
+    {
+        $matches = [];
+        $isMatching = preg_match('/^till-v(\d+(?:.\d+)?)/', basename($filePath), $matches);
+        if(empty($isMatching)) {
+            throw new \Exception("Found snapshot file $filePath with invalid name");
+        }
+        return $matches[1];
+    }
+
+    /**
      * Turn migration names like 'CreateUserTable' into file names like
      * '12345678901234_create_user_table.php' or 'LimitResourceNamesTo30Chars' into
      * '12345678901234_limit_resource_names_to_30_chars.php'.

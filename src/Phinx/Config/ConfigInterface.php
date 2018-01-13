@@ -103,6 +103,13 @@ interface ConfigInterface extends \ArrayAccess
     public function getSeedPaths();
 
     /**
+     * Gets the paths to search for snapshot files.
+     *
+     * @return string[]
+     */
+    public function getSnapshotPaths();
+
+    /**
      * Get the template file name.
      *
      * @return string|false

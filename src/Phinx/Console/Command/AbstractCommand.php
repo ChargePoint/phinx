@@ -105,6 +105,18 @@ abstract class AbstractCommand extends Command
         }
 
         try {
+            $paths = $this->getConfig()->getSnapshotPaths();
+
+            $output->writeln('<info>using snapshot paths</info> ');
+
+            foreach (Util::globAll($paths) as $path) {
+                $output->writeln('<info> - ' . realpath($path) . '</info>');
+            }
+        } catch (\UnexpectedValueException $e) {
+            // do nothing as snapshots are optional
+        }
+
+        try {
             $paths = $this->getConfig()->getSeedPaths();
 
             $output->writeln('<info>using seed paths</info> ');

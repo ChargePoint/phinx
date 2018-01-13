@@ -57,6 +57,7 @@ class PhinxApplication extends Application
         $this->addCommands([
             new Command\Init(),
             new Command\Create(),
+            new Command\Restore(),
             new Command\Migrate(),
             new Command\Rollback(),
             new Command\Status(),
