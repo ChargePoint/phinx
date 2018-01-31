@@ -286,6 +286,14 @@ class Util
 
     public static function compareVersion($left, $right)
     {
+        if (empty($left)) {
+            return -1;
+        }
+
+        if (empty($right)) {
+            return 1;
+        }
+
         $leftVersions = preg_split('/:/', $left);
         $rightVersions = preg_split('/:/', $right);
 
