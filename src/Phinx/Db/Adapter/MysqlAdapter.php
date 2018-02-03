@@ -1120,7 +1120,7 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
      */
     public function runUsingBinary($sql)
     {
-        $transactionalSql = implode(";", [
+        $transactionalSql = implode(";\n", [
             "SET AUTOCOMMIT=0",
             "START TRANSACTION",
             $sql,
