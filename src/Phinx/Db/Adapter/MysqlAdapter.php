@@ -1151,7 +1151,7 @@ class MysqlAdapter extends PdoAdapter implements AdapterInterface
         }
         $dbOptions = implode(" ", $dbOptions);
 
-        exec("mysql $dbOptions < $tempFile 2>&1", $retArr, $retVal);
+        exec("mysql --local-infile $dbOptions < $tempFile 2>&1", $retArr, $retVal);
 
         if ($retVal) {
             throw new \RuntimeException(
